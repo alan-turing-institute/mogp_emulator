@@ -76,12 +76,6 @@ def test_MultiOutputGP_init_failures():
         
     x = np.reshape(np.array([1., 2., 3.]), (1, 3))
     y = np.reshape(np.array([2.]), (1, 1))
-    z = np.array([-3.])
-    with pytest.raises(AssertionError):
-        gp = MultiOutputGP(x, y, z)
-        
-    x = np.reshape(np.array([1., 2., 3.]), (1, 3))
-    y = np.reshape(np.array([2.]), (1, 1))
     z = np.array([3., 4.])
     with pytest.raises(ValueError):
         gp = MultiOutputGP(x, y, z)
@@ -185,9 +179,6 @@ def test_MultiOutputGP_set_nugget():
     
     gp.set_nugget([1.e-6])
     assert_allclose(np.array(gp.emulators[0].get_nugget()), 1.e-6)
-    
-    with pytest.raises(AssertionError):
-        gp.set_nugget([-1.])
 
 def test_MultiOutputGP_set_params():
     "Test function for the _set_params method"

@@ -80,8 +80,10 @@ class MultiOutputGP(object):
         
         ``nugget`` is a list or other iterable of nugget parameters for each emulator. Its
         length must match the number of targets to be fit. The values must be ``None`` (adaptive
-        noise addition) or a non-negative float, and the emulators can have different noise
-        behaviors.
+        noise addition) or a float. Non-negative floats indicate a specified noise level, while
+        negative values will attempt a pivoted Cholesky decomposition. If the pivoted Cholesky
+        routine is not available, the code defaults to adaptive noise. The emulators can have
+        different noise behaviors.
         
         If two  or three input arguments ``inputs``, ``targets``, and optionally ``nugget`` are
         given:
@@ -96,8 +98,10 @@ class MultiOutputGP(object):
         :type targets: ndarray
         :param nugget: ``None`` or list or other iterable holding values for nugget parameter
                        for each emulator. Length must be ``n_emulators``. Individual values
-                       can be ``None`` (adaptive noise addition), or a non-negative float.
-                       This parameter is optional, and defaults to ``None``
+                       can be ``None`` (adaptive noise addition), or a float. Non-negative
+                       floats indicate a specified noise level, while negative values will
+                       attempt a pivoted Cholesky decomposition. This parameter is optional,
+                       and defaults to ``None``
         
         If one input argument ``emulator_file`` is given:
         
