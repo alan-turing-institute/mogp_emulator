@@ -52,6 +52,15 @@ def test_GaussianProcess_init():
     assert gp.D == 3
     assert gp.n == 1
     assert gp.nugget == None
+    
+    x = np.reshape(np.array([1., 2., 3.]), (1, 3))
+    y = np.array([2.])
+    gp = GaussianProcess(x, y, -1.)
+    assert_allclose(x, gp.inputs)
+    assert_allclose(y, gp.targets)
+    assert gp.D == 3
+    assert gp.n == 1
+    assert_allclose(gp.nugget, -1.)
 
     with TemporaryFile() as tmp:
         np.savez(tmp, inputs=np.array([[1., 2., 3.], [4., 5., 6]]),
@@ -112,11 +121,6 @@ def test_GaussianProcess_init_failures():
     y = np.array([[2., 3.], [4., 5]])
     with pytest.raises(ValueError):
         gp = GaussianProcess(x, y)
-        
-    x = np.reshape(np.array([1., 2., 3.]), (1, 3))
-    y = np.array([2.])
-    with pytest.raises(ValueError):
-        gp = GaussianProcess(x, y, -1.)
 
 def test_GaussianProcess_save_emulators():
     "Test function for the save_emulators method"
@@ -208,12 +212,6 @@ def test_GaussianProcess_set_nugget():
     gp = GaussianProcess(x, y)
     gp.set_nugget(1.e-6)
     assert_allclose(gp.nugget, 1.e-6)
-    
-    x = np.reshape(np.array([1., 2., 3.]), (1, 3))
-    y = np.array([2.])
-    gp = GaussianProcess(x, y)
-    with pytest.raises(AssertionError):
-        gp.set_nugget(-1.e-6)
 
 def test_GaussianProcess_prepare_likelihood():
     "Tests the _prepare_likelihood method of Gaussian Process"
@@ -234,6 +232,13 @@ def test_GaussianProcess_prepare_likelihood():
     assert_allclose(gp.logdetQ, logdetQ_expected, atol = 1.e-8, rtol = 1.e-5)
     
     gp.set_nugget(0.)
+    gp.theta = theta
+    gp._prepare_likelihood()
+    assert_allclose(gp.invQ, invQ_expected, atol = 1.e-8, rtol = 1.e-5)
+    assert_allclose(gp.invQt, invQt_expected, atol = 1.e-8, rtol = 1.e-5)
+    assert_allclose(gp.logdetQ, logdetQ_expected, atol = 1.e-8, rtol = 1.e-5)
+    
+    gp.set_nugget(-1.)
     gp.theta = theta
     gp._prepare_likelihood()
     assert_allclose(gp.invQ, invQ_expected, atol = 1.e-8, rtol = 1.e-5)
@@ -263,6 +268,18 @@ def test_GaussianProcess_prepare_likelihood():
                               [-3.3691214036059972e-03, -3.3691214038620732e-03, 1.0000444018785022e+00]])
     invQt_expected = np.array([-4.9999876342845545e+05,  5.0000123658773920e+05, 3.9833320004952104e+00])
     logdetQ_expected = -13.122407278313416
+    assert_allclose(gp.invQ, invQ_expected, atol = 1.e-8, rtol = 1.e-5)
+    assert_allclose(gp.invQt, invQt_expected, atol = 1.e-8, rtol = 1.e-5)
+    assert_allclose(gp.logdetQ, logdetQ_expected, atol = 1.e-8, rtol = 1.e-5)
+    
+    gp.set_nugget(-1.)
+    gp.theta = theta
+    gp._prepare_likelihood()
+    invQ_expected = np.array([[ 1.0000454019910098e+01, -9.0004086179190885e+00, -6.7382529152945373e-03],
+                              [-9.0004086179190885e+00,  9.0004086179190885e+00, 0.0000000000000000e+00],
+                              [-6.7382529152945373e-03,  0.0000000000000000e+00, 1.0000454019910097e+00]])
+    invQt_expected = np.array([-7.027270825598248 ,  9.000408617919089 ,  3.9867051021334494])
+    logdetQ_expected = -2.19731537925696
     assert_allclose(gp.invQ, invQ_expected, atol = 1.e-8, rtol = 1.e-5)
     assert_allclose(gp.invQt, invQt_expected, atol = 1.e-8, rtol = 1.e-5)
     assert_allclose(gp.logdetQ, logdetQ_expected, atol = 1.e-8, rtol = 1.e-5)

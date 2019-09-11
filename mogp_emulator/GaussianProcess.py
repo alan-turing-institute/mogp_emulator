@@ -1,6 +1,6 @@
 import numpy as np
 from .Kernel import SquaredExponential
-from .linalg.cholesky import jit_cholesky
+from .linalg.cholesky import jit_cholesky, pivot_cholesky, create_pivot_matrix
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
 from scipy import linalg
@@ -67,9 +67,15 @@ class GaussianProcess(object):
         
         ``nugget`` is the additional noise added to the emulator targets when fitting. This
         can take on values ``None`` (in which case, noise will be added adaptively to
-        stabilize fitting), or a non-negative float (in which case, a fixed noise level
-        will be used). If no value is specified for the ``nugget`` parameter, ``None``
-        is the default.
+        stabilize fitting), or a float. If the float is non-negative, a fixed noise level
+        will be used. If the nugget is a negative float, the code will attempt a pivoted
+        Cholesky decomposition. However, using the pivoted Cholesky decomposition requires
+        that you build the ``pivot_lapack`` extension using Cython and have a LAPACK library
+        version 3.2 or later installed on your system. This is because the pivoted Cholesky
+        routine is not included with Scipy by default. If you attempt to use the pivoted
+        Cholesky routine and the extension fails to run, the code will fall back onto the
+        adaptive nugget method. If no value is specified for the ``nugget`` parameter,
+        ``None`` is the default.
         
         If two or three input arguments ``inputs``, ``targets``, and optionally ``nugget`` are
         given:
@@ -80,10 +86,12 @@ class GaussianProcess(object):
         :type inputs: ndarray
         :param targets: Numpy array holding emulator targets. Must be 1D with length ``n``
         :type targets: ndarray
-        :param nugget: Noise to be added to the diagonal or ``None``. A float specifies the
-                       noise level explicitly, while if ``None`` is given, the noise will set
-                       to be as small as possible to ensure stable inversion of the covariance
-                       matrix. Optional, default is ``None``.
+        :param nugget: Noise to be added to the diagonal or ``None``. A non-negative float
+                       specifies the noise level explicitly, a negative float indicates that
+                       the pivoted Cholesky routine will be used (if available, if not defaults
+                       to adaptive nugget), and if ``None`` is given, the noise will set 
+                       adaptively to be as small as possible to ensure stable inversion of the
+                       covariance matrix. Optional, default is ``None``.
         
         If one input argument ``emulator_file`` is given:
         
@@ -118,8 +126,6 @@ class GaussianProcess(object):
                 nugget = args[2]
                 if not nugget == None:
                     nugget = float(nugget)
-                    if nugget < 0.:
-                        raise ValueError("nugget parameter must be nonnegative or None")
         else:
             raise ValueError("Init method of GaussianProcess requires 1 (file) or 2 (input array, target array) arguments")
 
@@ -280,7 +286,6 @@ class GaussianProcess(object):
         
         if not nugget == None:
             nugget = float(nugget)
-            assert nugget >= 0., "noise parameter must be nonnegative"
         self.nugget = nugget
     
     def _prepare_likelihood(self):
@@ -302,14 +307,27 @@ class GaussianProcess(object):
         
         self.Q = self.kernel.kernel_f(self.inputs, self.inputs, self.theta)
         
+        P = None
+        
         if self.nugget == None:
             L, nugget = jit_cholesky(self.Q)
             self.Z = self.Q + nugget*np.eye(self.n)
+        elif self.nugget < 0.:
+            try:
+                L, Piv = pivot_cholesky(self.Q)
+                P = create_pivot_matrix(Piv)
+            except (ModuleNotFoundError, AssertionError):
+                print("Unable to perform pivoted Cholesky decomposition, defaulting to adaptive nugget")
+                L, nugget = jit_cholesky(self.Q)
+                self.Z = self.Q + nugget*np.eye(self.n)
+                P = None
         else:
             self.Z = self.Q + self.nugget*np.eye(self.n)
             L = linalg.cholesky(self.Z, lower=True)
         
         self.invQ = np.linalg.inv(L.T).dot(np.linalg.inv(L))
+        if not P is None:
+            self.invQ = np.linalg.multi_dot([P, self.invQ, P.T])
         self.invQt = np.dot(self.invQ, self.targets)
         self.logdetQ = 2.0 * np.sum(np.log(np.diag(L)))
         
