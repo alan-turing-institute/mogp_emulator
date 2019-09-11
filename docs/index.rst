@@ -15,6 +15,7 @@ Welcome to Multi-Output GP Emulator's documentation!
    Kernel
    ExperimentalDesign
    SequentialDesign
+   linalg
    benchmarks/benchmarks
 
 
