@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ..linalg.cholesky import jit_cholesky, check_cholesky_inputs, pivot_cholesky
-from ..linalg.pivot_lapack import lapack_pivot_cholesky
+from ..linalg.cholesky import jit_cholesky, check_cholesky_inputs, create_pivot_matrix
 from scipy import linalg
 
 def test_check_cholesky_inputs():
@@ -51,6 +50,8 @@ def test_jit_cholesky():
 def test_lapack_pivot_cholesky():
     "Test lower level pivoted cholesky routine that interfaces with lapack"
     
+    from ..linalg.pivot_lapack import lapack_pivot_cholesky
+    
     input_matrix = np.array([[4., 12., -16.], [12., 37., -43.], [-16., -43., 98.]])
     L_expected = np.array([[ 9.899494936611665 ,  0.                ,  0.                ],
                            [-4.3436559415745055,  4.258245303082538 ,  0.                ],
@@ -83,6 +84,8 @@ def test_lapack_pivot_cholesky():
 def test_pivot_cholesky():
     "Tests the higher level pivoted cholesky decomposition routine"
     
+    from ..linalg.cholesky import pivot_cholesky
+    
     input_matrix = np.array([[4., 12., -16.], [12., 37., -43.], [-16., -43., 98.]])
     input_matrix_copy = np.copy(input_matrix)
     L_expected = np.array([[ 9.899494936611665 ,  0.                ,  0.                ],
@@ -108,3 +111,17 @@ def test_pivot_cholesky():
     assert_allclose(L_actual, L_expected)
     assert np.all(Piv_expected == Piv_actual)
     assert_allclose(input_matrix, input_matrix_copy)
+    
+def test_create_pivot_matrix():
+    "Test function to create pivot matrix"
+    
+    P = np.array([1, 3, 2], dtype = np.intc)
+    
+    Piv = create_pivot_matrix(P)
+    
+    assert_allclose(Piv, np.array([[1., 0., 0.], [0., 0., 1.], [0., 1., 0.]]))
+    
+    P = np.array([1, 3, 1], dtype = np.intc)
+    
+    with pytest.raises(AssertionError):
+        create_pivot_matrix(P)

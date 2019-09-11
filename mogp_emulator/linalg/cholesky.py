@@ -1,7 +1,6 @@
 import numpy as np
 from scipy import linalg
 from scipy.linalg import lapack
-from .pivot_lapack import lapack_pivot_cholesky
 
 def check_cholesky_inputs(A):
     "Check inputs to cholesky routines"
@@ -68,6 +67,8 @@ def jit_cholesky(Q, maxtries = 5):
 def pivot_cholesky(A):
     "Pivoted cholesky decomposition routine"
     
+    from .pivot_lapack import lapack_pivot_cholesky
+    
     A = check_cholesky_inputs(A)
     
     A = np.ascontiguousarray(A)
@@ -81,3 +82,14 @@ def pivot_cholesky(A):
         raise LinAlgError("Illegal value found in pivoted Cholesky decomposition")
     
     return L, P
+    
+def create_pivot_matrix(p):
+    
+    n = len(p)
+    assert np.all(np.sort(p) == np.arange(1, n + 1))
+    
+    P = np.zeros((n,n)) 
+    for i in range(n): 
+        P[p[i] - 1, i] = 1.
+    
+    return P
