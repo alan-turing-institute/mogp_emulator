@@ -11,6 +11,10 @@ def test_check_cholesky_inputs():
     B = check_cholesky_inputs(A)
     
     assert_allclose(A, B)
+
+    A = np.array([[1., 2.], [1., 2.]])
+    with pytest.raises(AssertionError):
+        check_cholesky_inputs(A)
     
     A = np.array([1., 2.])
     with pytest.raises(AssertionError):
