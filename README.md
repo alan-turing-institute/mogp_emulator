@@ -57,26 +57,40 @@ This will clone the entire git history of the software and check out the master 
 code has a master and devel branch available -- the master branch is relatively stable while the devel
 branch will be update more frequently with new features.
 
-#### Installation
+#### Dependencies and Extensions
 
 To install the dependencies, in the main `mopg_emulator` directory enter the following into the shell:
 
 	pip3 install -r requirements.txt
 	
-Then to install the main code, run the following command:
+Then to build the extension to use the pivoted Cholesky routines, enter the following into the shell:
+
+    python3 setup.py build_ext --inplace
+    
+This will create and compile the C extension needed to interface with the LAPACK pivoted Cholesky routine,
+which can be used to stabilize the GP fitting. You will need a LAPACK library version 3.2 or later to
+use the pivoting routines. This is optional, but if you do not build the extension then three of the
+unit tests will fail that use this extension. You can still use the other routines without this step.
+
+#### Installation
+
+To install the main code, run the following command:
 
 	python3 setup.py install
 	
-This will install all dependencies and install the main code in the system Python installation. You may
-need adminstrative priveleges to install the dependencies or the software itself, depending on your
-system configuration. However, any updates to the code (particularly if you are using the devel branch,
-which is under more active development) will not be reflected in the system installation using this method.
-If you would like to always have the most active development version, install using:
+This will install the main code in the system Python installation. You may need adminstrative priveleges
+to install the dependencies or the software itself, depending on your system configuration. However, any
+updates to the code (particularly if you are using the devel branch, which is under more active
+development) will not be reflected in the system installation using this method. If you would like to
+always have the most active development version, install using:
 
 	python3 setup.py develop
 	
 This will insert symlinks to the repository files into the system Python installation so that files
 are updated whenever there are changes to the code files.
+
+Another way to use the code without intalling is to modify your system `PYTHONPATH` environment variable
+to include the path to the `mogp_emulator` package.
 
 ### Testing the Installation
 
@@ -117,6 +131,13 @@ speed at which the code fits multiple emulators in parallel. The code fits 8, 16
 using 1, 2, 4, and 8 processess and notes the time required to perform the fitting. Note that the results
 will depend on the number of cores on the computer -- once you exceed the number of cores, the performance
 will degrade. As with the other benchmarks, Matplotlib can optionally be used to plot the results.
+
+##### MICE Benchmark
+
+A benchmark comparing the MICE Sequential design method to Latin Hypercube sampling is also available.
+This creates designs of a variety of sizes and computes the error on unseen data for the 2D Branin
+function. It compares the accuracy of the sequential design to the Latin Hypercube for both the
+predictions and uncertainties.
 
 ### Documentation
 
