@@ -112,7 +112,7 @@ class Kernel(object):
         
 
     def calc_r(self, x1, x2, params):
-        """
+        r"""
         Calculate distance between all pairs of points
         
         This method computes the scaled Euclidean distance between all pairs of points
