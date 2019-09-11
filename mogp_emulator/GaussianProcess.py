@@ -269,16 +269,20 @@ class GaussianProcess(object):
         The ``nugget`` parameter controls how noise is added to the covariance matrix in order to
         stabilize the inversion or smooth the emulator predictions. If ``nugget`` is a non-negative
         float, then that particular value is used for the nugget. Note that setting this parameter
-        to be zero enforces that the emulator strictly interpolates between points. Alternatively,
-        if ``nugget`` is set to be ``None``, the fitting routine will adaptively make the noise
-        parameter as large as is needed to ensure that the emulator can be fit.
+        to be zero enforces that the emulator strictly interpolates between points. Negative values
+        of ``nugget`` will attempt to use pivoting to stabilize the Cholesky decomposition, falling
+        back to adaptive noise addition if the pivoted Cholesky routines are not available.
+        Alternatively, if ``nugget`` is set to be ``None``, the fitting routine will adaptively make
+        the noise parameter as large as is needed to ensure that the emulator can be fit.
         
         :param nugget: Controls how noise is added to the emulator. If ``nugget`` is a nonnegative
                        float, then this manually sets the noise parameter (if negative, this will
                        lead to an error), with ``nugget = 0`` resulting in interpolation with no
-                       smoothing noise added. ``nugget = None`` will adaptively select the
-                       smallest value of the noise term that still leads to a stable inversion of
-                       the matrix. Default behavior is ``nugget = None``.
+                       smoothing noise added. Negative values of ``nugget`` will attempt to use
+                       pivoting to stabilize the Cholesky decomposition, if the routine is not
+                       available adaptive stabilization will be used. ``nugget = None`` will
+                       adaptively select the smallest value of the noise term that still leads
+                       to a stable inversion of the matrix. Default behavior is ``nugget = None``.
         :type nugget: None or float
         :returns: None
         :rtype: None
