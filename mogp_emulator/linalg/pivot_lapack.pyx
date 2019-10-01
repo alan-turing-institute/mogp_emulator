@@ -17,8 +17,8 @@ cpdef int lapack_pivot_cholesky(double[:, ::1] A, int[:] PIV):
     of matrix rows. The matrix to be factored is modified in-place, and
     the pivoting vector is also modified in place. The routine also
     returns the integer exit code from the LAPACK routine. The LAPACK code
-    also requires work space of the same size as the input matrix which is
-    allocated and freed in the function.
+    requires work space of the size ``2*n`` which is allocated and freed in
+    the function.
     
     Possible exit codes are ``0`` (exited normally), ``1`` (algorithm exited
     before completing entire factorization, this situation is corrected in

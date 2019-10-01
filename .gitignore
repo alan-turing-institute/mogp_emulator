@@ -1,3 +1,5 @@
 *.pyc
 *.DS_Store
 *.png
+mogp_emulator/linalg/*.c
+mogp_emulator/linalg/*.so
