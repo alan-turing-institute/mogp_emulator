@@ -2,11 +2,19 @@
 This benchmark performs convergence tests using the pivoted Cholesky routines applied to the
 2D Branin function. Details of the 2D Branin function can be found at
 https://www.sfu.ca/~ssurjano/branin.html. The code samples the Branin function using an increasing
-number of points. When pivoting is not used, the algorithm is stabilized by adding a nugget term
-to the diagonal of the covariance matrix. This degrades the performance of the emulator globally,
-despite the fact that the problem arises from a local problem in fitting the emulator. Pivoting
-ignores points that are too close to one another, ensuring that there is no loss of performance
-as the number of points increases
+number of points, with a duplicate point added to make the matrix singular. When pivoting is not
+used, the algorithm is stabilized by adding a nugget term to the diagonal of the covariance matrix.
+This degrades the performance of the emulator globally, despite the fact that the problem arises
+from a local problem in fitting the emulator. Pivoting ignores points that are too close to one
+another, ensuring that there is no loss of performance as the number of points increases.
+
+Note that this benchmark only covers relatively small designs. Tests have revealed that there are
+some stability issues when applying pivoting to larger numbers of inputs -- this appears to be
+due to the minimization algorithm, perhaps due to the fact that pivoting computes the inverse of
+a slightly different matrix which may make the gradient computations incorrect. Care should
+thus be taken to examine the resulting performance when applying pivoting in practice. Future
+versions may implement other approaches to ensure that pivoting gives stable performance
+on a wide variety of input data.
 '''
 
 import numpy as np
@@ -35,7 +43,7 @@ def branin_2d(x):
 f = branin_2d
 n_dim = 2
 design_space = [uniform(loc = -5., scale = 15.).ppf, uniform(loc = 0., scale = 15.).ppf]
-simulations = [10, 20, 30, 40, 50, 60]
+simulations = [5, 10, 15, 20, 25, 30]
 
 def generate_input_data(n_simulations, method = "random"):
     "Generate random points x1 and x2 for evaluating the multivalued 2D Branin function"
@@ -64,12 +72,21 @@ def generate_target_data(inputs):
     return targets
 
 def generate_training_data(n_simulations):
-    "Generate n_simulations input data and evaluate using n_emulators different parameter values"
+    "Generate n_simulations input data and add a duplicate point to make matrix singular"
     
     inputs = generate_input_data(n_simulations, method = "lhd")
     targets = generate_target_data(inputs)
     
-    return inputs, targets
+    inputs_new = np.zeros((inputs.shape[0] + 1, inputs.shape[1]))
+    targets_new = np.zeros(targets.shape[0] + 1)
+    
+    inputs_new[:-1, :] = np.copy(inputs)
+    targets_new[:-1] = np.copy(targets)
+    
+    inputs_new[-1,:] = np.copy(inputs[0,:])
+    targets_new[-1] = np.copy(targets[0])
+    
+    return inputs_new, targets_new
     
 def generate_test_data(n_testing):
     "Generate n_testing points for testing the accuracy of an emulator"
